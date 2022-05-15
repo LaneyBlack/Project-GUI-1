@@ -1,5 +1,5 @@
 Spaghetti	Pone of spaghetti bolognese with cheese.	true	18
 Large Spaghetti	Bigger pone of spaghetti bolognese with cheese and meetballs.	true	24
 Pizza Margarita	Old as this world, but as balanced, as the universe.	true	31
-Fried Potatoes	Blarussian taste.	true	12
 Pierogi	Very tasty polish dish.	true	14
+Pancakes with nutella	Gorgeous taste. Beautiful shape and lots of nutella.	true	40

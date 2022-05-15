@@ -33,25 +33,10 @@ public class Colors {
         };
     }
 
-//    public static void main(String[] args) {
-//        System.out.println(getTextColor("reset") + "Reset");
-//        System.out.println(getTextColor("black") + "Black");
-//        System.out.println(getTextColor("red") + "Red");
-//        System.out.println("\u001B[32m" + "Green");
-//        System.out.println("\u001B[33m" + "Yellow");
-//        System.out.println("\u001B[34m" + "Blue");
-//        System.out.println("\u001B[35m" + "Purple");
-//        System.out.println("\u001B[36m" + "Cyan");
-//        System.out.println("\u001B[37m" + "White");
-//        System.out.println("--------------------");
-//        System.out.println("\u001B[0m" + "Reset");
-//        System.out.println(getTextBGColor("black") + "Black");
-//        System.out.println(getTextBGColor("red") + "Red");
-//        System.out.println("\u001B[42m" + "Green");
-//        System.out.println("\u001B[43m" + "Yellow");
-//        System.out.println("\u001B[44m" + "Blue");
-//        System.out.println("\u001B[45m" + "Purple");
-//        System.out.println("\u001B[46m" + "Cyan");
-//        System.out.println("\u001B[47m" + "White");
-//    }
+    public static void successPrint(String string){
+        System.out.println(Colors.getTextColor("GREEN") + string + Colors.getTextColor("RESET"));
+    }
+    public static void errorPrint(String string){
+        System.out.println(Colors.getTextColor("RED") + string + Colors.getTextColor("RESET"));
+    }
 }

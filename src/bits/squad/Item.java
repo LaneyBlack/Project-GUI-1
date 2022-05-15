@@ -1,12 +1,13 @@
 package bits.squad;
 
-public class Dish {
+public class Item<T extends Number>
+{
     private boolean isAvailable;
     private String name;
     private String description;
-    private int price;
+    private T price;
 
-    public Dish(String name, String description, boolean isAvailable, int price) {
+    public Item(String name, String description, boolean isAvailable, T price) {
         this.isAvailable = isAvailable;
         this.name = name;
         this.description = description;
@@ -37,11 +38,11 @@ public class Dish {
         this.description = description;
     }
 
-    public int getPrice() {
+    public T getPrice() {
         return price;
     }
 
-    public void setPrice(int price) {
+    public void setPrice(T price) {
         this.price = price;
     }
 
