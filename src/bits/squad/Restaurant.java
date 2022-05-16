@@ -10,50 +10,55 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.InputMismatchException;
+import java.util.Scanner;
+
+import static bits.squad.Colors.errorPrint;
 
 public class Restaurant {
     private String name;
     private String address;
     private byte tables;
-    private byte cooksNum;
+    private static int workersCount;
     private ArrayList<Item> menu;
-    private HashMap<Status, Order> orders;
+    private ArrayList<Order> orders;
     private HashMap<String, ArrayList<Person>> workers;
 
-    enum Status {
-        ORDERED,
-        IN_PROGRESS,
-        DONE
-    }
-
-    public Restaurant(String name, String address, int tables, int cooksNum) {
+    public Restaurant(String name, String address, int tables) {
         this.name = name;
         this.address = address;
         this.tables = (byte) tables;
-        this.cooksNum = (byte) cooksNum;
         menu = new ArrayList<>();
-        orders = new HashMap<>();
+        orders = new ArrayList<>();
+        workersCount = 1;
         workers = new HashMap<>();
         workers.put("Cook", new ArrayList<>());
         workers.put("Delivery", new ArrayList<>());
         workers.put("Waiter", new ArrayList<>());
     }
 
-    public void close() {
-        System.out.println("Closing restaurant");
-        //ToDo Restaurant Close
-        System.out.println(name + " is closed");
+    public byte getTables() {
+        return tables;
     }
 
     public String getName() {
         return name;
     }
 
+    public void close() {
+        System.out.println("Closing " + name + "...");
+        //ToDo Restaurant Close
+        System.out.println(Colors.getTextColor("BLUE") + "--------" + name + " is closed--------" + Colors.getTextColor("RESET"));
+    }
+
     //-------------------------------------------------------Menu-------------------------------------------------------
 
     public void addToMenu(Item val) {
         menu.add(val);
+    }
+
+    public Item getItemById(int id) {
+        return menu.get(id - 1);
     }
 
     public void deleteFromMenu(int index) {
@@ -69,7 +74,7 @@ public class Restaurant {
     }
 
     public void printMenu() {
-        System.out.println(Colors.getTextColor("blue") + "\t\t\t---Menu---" + Colors.getTextColor("RESET"));
+        System.out.println("--------Menu--------");
         for (int i = 0; i < menu.size(); i++)
             System.out.println((i + 1) + ". " + menu.get(i));
     }
@@ -80,10 +85,11 @@ public class Restaurant {
     }
 
     public void printAvailableMenu() {
-        System.out.println(Colors.getTextColor("blue") + "\t\t\t---Available Menu---" + Colors.getTextColor("RESET"));
+        System.out.println("--------Available Menu--------");
         for (int i = 0; i < menu.size(); i++)
-            if (menu.get(i).isAvailable())
+            if (menu.get(i).isAvailable()) {
                 System.out.println((i + 1) + ". " + menu.get(i));
+            }
     }
 
     public void writeMenuToText() throws IOException {
@@ -105,12 +111,12 @@ public class Restaurant {
 
     //-------------------------------------------------------Workers-------------------------------------------------------
 
-    public int newWorkerId() {
-        AtomicInteger counter = new AtomicInteger();
-        workers.forEach((k, v) -> counter.addAndGet(v.size()));
-        return counter.get() + 1;
-        //ToDo if you remove worker with id 4. When there is 5 workers and then try to add another one. You'll have two workers with same id.
-        //Probably better to create new const and create a constructor without Id.
+    public int getNewWorkerId() {
+        return workersCount++;
+//        AtomicInteger counter = new AtomicInteger();
+//        workers.forEach((k, v) -> counter.addAndGet(v.size()));
+//        return counter.get() + 1;
+//        //Probably better to create new const and create a constructor without Id.
     }
 
     public void addWorker(Person person) {
@@ -122,7 +128,7 @@ public class Restaurant {
     }
 
     public void printAllWorkers() {
-        System.out.println(Colors.getTextColor("BLUE") + "\t\t\t---Workers---" + Colors.getTextColor("RESET"));
+        System.out.println("--------Workers--------");
         workers.forEach((k, array) -> {
             System.out.println("---" + k + "---");
             for (Person v : array) {
@@ -132,7 +138,7 @@ public class Restaurant {
         });
     }
 
-    public void printWorkerNames(){
+    public void printWorkerNames() {
         workers.forEach((k, array) -> {
             for (Person v : array) {
                 System.out.println(v.getWorkerId() + "---" + v.getName());
@@ -141,12 +147,28 @@ public class Restaurant {
     }
 
     //-------------------------------------------------------Orders-------------------------------------------------------
-//    public void makeStationaryOrder(Order order, int table) {
-////        orders.put(Status.ORDERED,Order order);
-//        workers.forEach((k,v)->{
-//            if (k && v.getClass().getName().equals("Cook")){
-//
-//            }
-//        });
-//    }
+    public void makeAnOrder(Order order) {
+        Scanner in = new Scanner(System.in);
+        try {
+            String input = "-a";
+            while (input.equals("-a")) {
+                System.out.println("Please select item id to order:");
+                int itemIndex = in.nextInt();
+                System.out.println("Please enter count of items:");
+                int times = in.nextInt();
+                in.nextLine(); //Scanner goes to new line
+                if ((itemIndex - 1 < 0 || itemIndex > menu.size()) || times < 1)
+                    throw new InputMismatchException("Invalid order input");
+                for (int i = 0; i < times; i++)
+                    order.getItems().add(menu.get(itemIndex - 1));
+                System.out.println("Anything else? (type `-a` to order more or type anything to continue)");
+                input = in.nextLine().trim();
+            }
+            orders.add(order);
+            //ToDo Streams
+            System.out.println("Order was successfully made.");
+        } catch (IllegalStateException | InputMismatchException e) {
+            errorPrint("Invalid order input exception!");
+        }
+    }
 }

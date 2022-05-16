@@ -1,6 +1,7 @@
 package bits.squad.orders;
 
 import bits.squad.Item;
+import bits.squad.Restaurant;
 
 import java.util.ArrayList;
 
@@ -9,19 +10,22 @@ public abstract class Order {
     boolean isLate;
     long timestamp;
     int tips;
+    Status status;
+    enum Status {
+        ORDERED,
+        IN_PROGRESS,
+        DONE;
+    }
 
     public Order(ArrayList<Item> items) {
         this.items = items;
         isLate = false;
         timestamp = System.currentTimeMillis();
+        status = Status.ORDERED;
     }
 
-    public ArrayList<Item> getDishes() {
+    public ArrayList<Item> getItems() {
         return items;
-    }
-
-    public void setDishes(ArrayList<Item> items) {
-        this.items = items;
     }
 
     public boolean isLate() {

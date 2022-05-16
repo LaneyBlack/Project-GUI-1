@@ -7,3 +7,6 @@
 /dataSources/
 /dataSources.local.xml
 /vcs.xml
+/uiDesigner.xml
+.xml
+.class
