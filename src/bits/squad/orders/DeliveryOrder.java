@@ -1,7 +1,5 @@
 package bits.squad.orders;
 
-import bits.squad.Item;
-
 import java.util.ArrayList;
 
 public class DeliveryOrder extends Order{
@@ -12,7 +10,9 @@ public class DeliveryOrder extends Order{
         this.address = address;
     }
 
-    public String getAddress() {
-        return address;
+    @Override
+    public String toString() {
+        return super.toString() +
+                "\taddress: " + address;
     }
 }

@@ -1,5 +1,6 @@
-package bits.squad.employee;
+package bits.squad.employee.hander;
 
+import bits.squad.employee.Employee;
 import bits.squad.orders.Order;
 
 import static bits.squad.Restaurant.messagesOnStatusChanges;
@@ -28,7 +29,7 @@ public abstract class Handler extends Employee {
     public void process() {
         thread = new Thread(() -> {
             if (messagesOnStatusChanges)
-                System.out.println("Started handling " + order.getId() + " by " + id);
+                System.out.println(this.getClass().getSimpleName() + " " + getName() + " started to hand order["+order.getId()+"]");
             order.setHandler(this);
             try {
                 Thread.sleep(processTime);
@@ -37,7 +38,7 @@ public abstract class Handler extends Employee {
             }
             countOrder();
             if (messagesOnStatusChanges)
-                System.out.println("Was handled " + order.getId());
+                System.out.println(this.getClass().getSimpleName() + " " + getName() + " has handed order["+order.getId()+"]");
             order.setStatus(Order.Status.DONE);
             thread.stop();
         });
@@ -46,5 +47,10 @@ public abstract class Handler extends Employee {
 
     public boolean isBusy() {
         return thread.isAlive();
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + "\ttips:" + tips + "zl";
     }
 }

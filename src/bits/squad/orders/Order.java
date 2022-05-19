@@ -1,7 +1,6 @@
 package bits.squad.orders;
 
-import bits.squad.Item;
-import bits.squad.employee.Handler;
+import bits.squad.employee.hander.Handler;
 
 import java.util.ArrayList;
 import java.util.concurrent.locks.Lock;
@@ -14,7 +13,7 @@ public abstract class Order {
     int price;
     Status status;
 
-    static int idCount = 0;
+    static int idCount = 1;
 
     ReentrantReadWriteLock readWriteLock;
     Handler handler;
@@ -31,18 +30,23 @@ public abstract class Order {
 
     public Order(ArrayList<Item<Integer>> items) {
         this.items = items;
+        this.items.forEach((item) -> {
+            price += item.getIntPrice();
+        });
         isLate = false;
         timestamp = System.currentTimeMillis();
         status = Status.TO_COOK;
-        items.forEach((item) -> {
-            price += item.getIntPrice();
-        });
         id = idCount++;
         readWriteLock = new ReentrantReadWriteLock();
     }
 
     public ArrayList<Item<Integer>> getItems() {
         return items;
+    }
+
+    public void addItem(Item<Integer> item) {
+        items.add(item);
+        price += item.getPrice();
     }
 
     public boolean isLate() {
@@ -81,7 +85,7 @@ public abstract class Order {
     }
 
     public void setStatus(Status status) {
-        Lock readLock = readWriteLock.writeLock();
+        Lock readLock = readWriteLock.writeLock(); //safety, cause 2 threads are working with order
         readLock.lock();
         try {
             this.status = status;
@@ -98,4 +102,10 @@ public abstract class Order {
         return id;
     }
 
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName() + "[" + id + "]:\tprice:" + price + "zl\t--" + status + "--\titems:" + items.size()
+                + "\twas ordered " + (int) ((System.currentTimeMillis() - timestamp) / 60_000)
+                + " mins ago\t" + "\t" + (isLate ? "late" : "") + (handler != null ? "Handler:" + handler.getName() : "");
+    }
 }

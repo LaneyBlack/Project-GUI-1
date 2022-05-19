@@ -1,4 +1,4 @@
-package bits.squad;
+package bits.squad.orders;
 
 public class Item<T extends Number> {
     private boolean isAvailable;
@@ -25,16 +25,8 @@ public class Item<T extends Number> {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String getDescription() {
         return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public T getPrice() {
@@ -43,10 +35,6 @@ public class Item<T extends Number> {
 
     public int getIntPrice(){
         return price.intValue();
-    }
-
-    public void setPrice(T price) {
-        this.price = price;
     }
 
     @Override

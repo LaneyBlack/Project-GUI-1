@@ -3,9 +3,10 @@ package bits.squad;
 
 import bits.squad.employee.Cook;
 import bits.squad.employee.Employee;
-import bits.squad.employee.Handler;
 import bits.squad.employee.Kitchen;
+import bits.squad.employee.hander.Handler;
 import bits.squad.orders.DeliveryOrder;
+import bits.squad.orders.Item;
 import bits.squad.orders.Order;
 import bits.squad.orders.StationaryOrder;
 
@@ -15,20 +16,17 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.InputMismatchException;
-import java.util.Scanner;
-
-import static bits.squad.Colors.errorPrint;
 
 public class Restaurant extends Thread {
     private final String name;
     private final String address;
     private final byte tables;
     private long turnOver;
-    private Kitchen kitchen;
+    private final Kitchen kitchen;
+    private boolean isPaused;
 
-    private static final int lateTime = 60000 * 15;
-    public static final boolean messagesOnStatusChanges = true;
+    private static final int lateTime = 1000 * 60 * 15;
+    public static boolean messagesOnStatusChanges = false;
     private static int employeesCount;
 
     private ArrayList<Item<Integer>> menu;
@@ -55,28 +53,61 @@ public class Restaurant extends Thread {
         return tables;
     }
 
+    public long getTurnOver() {
+        return turnOver;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
     public String getRestName() {
         return name;
     }
 
     public void startRestaurant() {
-        this.start();
-        kitchen.start();
+        if (isPaused)
+            pause();
+        else {
+            System.out.println(Colors.getTextColor("GREEN") + name + " started working" + Colors.getTextColor("RESET"));
+            start();
+            kitchen.start();
+        }
+
+    }
+
+    public void pause() {
+        isPaused = !isPaused;
+        System.out.println(isPaused ? "Paused" : "Unpaused");
     }
 
     public void close() {
         System.out.println("Closing " + name + "...");
-        //ToDo Restaurant Close
+        kitchen.stop();
+        if (hasBusyHandlers()) {
+            System.out.println("There is still some deliveries going on.");
+        }
+        while (hasBusyHandlers()) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        stop();
+        System.out.println("Today turnover is " + turnOver + "zl from " + madeOrders.size() + " orders");
+        printRealisedOrders();
+        printAllEmployees();
         System.out.println(Colors.getTextColor("BLUE") + "--------" + name + " is closed--------" + Colors.getTextColor("RESET"));
     }
 
     //-------------------------------------------------------Menu-------------------------------------------------------
 
-    public void addToMenu(Item item) {
+    public void addToMenu(Item<Integer> item) {
         menu.add(item);
     }
 
-    public Item getItemById(int id) {
+    public Item<Integer> getItemById(int id) {
         return menu.get(id - 1);
     }
 
@@ -100,7 +131,8 @@ public class Restaurant extends Thread {
 
     public void printDishes() {
         for (int i = 0; i < menu.size(); i++)
-            System.out.println((i + 1) + " - " + menu.get(i).getName());
+            if (menu.get(i).isAvailable())
+                System.out.println((i + 1) + " - " + menu.get(i).getName());
     }
 
     public void printAvailableMenu() {
@@ -128,7 +160,16 @@ public class Restaurant extends Thread {
         }
     }
 
+    public int getMenuSize() {
+        return menu.size();
+    }
+
     //-------------------------------------------------------Employees-------------------------------------------------------
+
+    public int getNewEmployeeId() {
+        return employeesCount++;
+    }
+
     public Employee getEmployeeById(int id) {
         for (Cook cook : kitchen.getCooks()) {
             if (id == cook.getId())
@@ -141,26 +182,6 @@ public class Restaurant extends Thread {
         return null;
     }
 
-    public Employee getHandlerById(int id) {
-        for (Employee handler : handlers) {
-            if (id == handler.getId())
-                return handler;
-        }
-        return null;
-    }
-
-    public boolean hasNotBusyHandlers(String handlerType) {
-        for (Handler handler : handlers) {
-            if (handler.getClass().getSimpleName().equals(handlerType) && !handler.isBusy())
-                return true;
-        }
-        return false;
-    }
-
-    public int getNewEmployeeId() {
-        return employeesCount++;
-    }
-
     public void addEmployee(Employee employee) {
         if (employee.getClass().getSimpleName().equals("Cook"))
             kitchen.addCook((Cook) employee);
@@ -171,28 +192,64 @@ public class Restaurant extends Thread {
     public void deleteEmployee(int id) {
         handlers.removeIf(handler -> id == handler.getId());
         kitchen.getCooks().removeIf(cook -> id == cook.getId());
+        if (kitchen.getCooks().isEmpty())
+            System.out.println("WARNING: There is no cooks left");
+        boolean deliveryIsEmpty = true, waitersIsEmpty = true;
+        for (Handler handler : handlers) {
+            if (handler.getClass().getSimpleName().equals("Waiter"))
+                waitersIsEmpty = false;
+            else if (handler.getClass().getSimpleName().equals("Deliveryman"))
+                deliveryIsEmpty = false;
+            if (!deliveryIsEmpty && !waitersIsEmpty)
+                break;
+        }
+        if (deliveryIsEmpty)
+            System.out.println("WARNING: There is no deliverymans left");
+        if (waitersIsEmpty)
+            System.out.println("WARNING: There is no waiters left");
+    }
+
+    public boolean hasBusyHandlers() {
+        for (Handler handler : handlers) {
+            if (handler.isBusy())
+                return true;
+        }
+        return false;
+    }
+
+    public boolean hasNotBusyHandlers(String handlerType) {
+        for (Handler handler : handlers) {
+            if (handler.getClass().getSimpleName().equals(handlerType) && !handler.isBusy())
+                return true;
+        }
+        return false;
+    }
+
+    public void handlerProcessOrder(Order order, String handlerType) {
+        for (Handler handler : handlers) {
+            if (!handler.isBusy() && handler.getClass().getSimpleName().equals(handlerType)) {
+                order.setStatus(Order.Status.HANDLING);
+                handler.setOrder(order);
+                handler.process();
+                break;
+            }
+        }
     }
 
     public void printAllEmployees() {
         System.out.println("--------Employees--------");
         System.out.println("---Cooks---");
-        for (Cook cook : kitchen.getCooks()) {
-            //ToDo redefine toString
-            System.out.println(cook.getId() + " - " + cook.getName());
-            System.out.println("Salary: " + cook.getSalary() + "zl/month\t");
-        }
+        kitchen.getCooks().forEach(System.out::println);
         System.out.println("---Waiters---");
         handlers.forEach(handler -> {
             if (handler.getClass().getSimpleName().equals("Waiter")) {
-                System.out.println(handler.getId() + " - " + handler.getName());
-                System.out.println("Salary: " + handler.getSalary() + "zl/month\t");
+                System.out.println(handler);
             }
         });
-        System.out.println("---Delivery---");
+        System.out.println("---Deliverymans---");
         handlers.forEach(handler -> {
-            if (handler.getClass().getSimpleName().equals("Delivery")) {
-                System.out.println(handler.getId() + " - " + handler.getName());
-                System.out.println("Salary: " + handler.getSalary() + "zl/month\t");
+            if (handler.getClass().getSimpleName().equals("Deliveryman")) {
+                System.out.println(handler);
             }
         });
     }
@@ -206,9 +263,13 @@ public class Restaurant extends Thread {
     public void makeRandomOrder() {
         Order order;
         ArrayList<Item<Integer>> items = new ArrayList<>();
-        for (int i = 0; i < (int) (Math.random() * 10) + 1; i++) //Adding random items from menu
-            items.add(menu.get((int) (Math.random() * menu.size())));
-
+        for (int i = 0; i < (int) (Math.random() * 10) + 1; i++) { //Adding random items from menu
+            int itemIndex;
+            do {
+                itemIndex = (int) (Math.random() * menu.size());
+            } while (!menu.get(itemIndex).isAvailable());
+            items.add(menu.get(itemIndex));
+        }
         int type = (int) (Math.random() * 2); //Choosing type of the order
         if (type == 0) {
             order = new StationaryOrder(items, (byte) (Math.random() * tables + 1)); //Randomising table number
@@ -226,107 +287,90 @@ public class Restaurant extends Thread {
     }
 
     public void makeAnOrder(Order order) {
-        //ToDo refactor tihs method
-        Scanner in = new Scanner(System.in);
-        try {
-            String input = "-a";
-            while (input.equals("-a")) {
-                System.out.println("Please select item id to order:");
-                int itemIndex = in.nextInt();
-                System.out.println("Please enter count of items:");
-                int times = in.nextInt();
-                in.nextLine(); //Scanner goes to new line
-                if ((itemIndex - 1 < 0 || itemIndex > menu.size()) || times < 1)
-                    throw new InputMismatchException("Invalid order input");
-                for (int i = 0; i < times; i++)
-                    order.getItems().add(menu.get(itemIndex - 1));
-                System.out.println("Anything else? (type `-a` to order more or type anything to continue)");
-                input = in.nextLine().trim();
-            }
-            order.setTimestamp(System.currentTimeMillis());
-            orderQueue.add(order);
-            System.out.println("Your order id is " + order.getId());
-        } catch (IllegalStateException | InputMismatchException e) {
-            errorPrint("Invalid order input exception!");
-        }
+        order.setTimestamp(System.currentTimeMillis());
+        orderQueue.add(order);
+        System.out.println("Your order id is " + order.getId());
     }
 
     public void printWaitingOrders() {
-        System.out.println("--------WaitingOrders--------");
-        orderQueue.forEach(order -> System.out.println("Order Id: " + order.getId() + "---" + order.getStatus()));
+        if (orderQueue.isEmpty())
+            System.out.println(name + " has no waiting orders");
+        else {
+            System.out.println("--------WaitingOrdersQueue--------");
+            orderQueue.forEach(System.out::println);
+        }
     }
 
-    //-------------Thread-------------
+    public void printRealisedOrders() {
+        if (madeOrders.isEmpty())
+            System.out.println(name + " has no realised orders yet");
+        else {
+            System.out.println("--------RealisedOrders--------(in order they were delivered)");
+            madeOrders.forEach(order -> System.out.println(madeOrders.indexOf(order) + 1 + ". " + order));
+        }
+    }
+
+    //-------------Administration(Thread)-------------
     @Override
     public void run() {
         while (!isInterrupted()) {
-            //ToDo rewrite RUN!!!
-            ArrayList<Order> process = new ArrayList<>();//for safety and no coChanging values
-            if (!kitchen.isBusy() && orderQueue.peek() != null) //working with Kitchen
-                if (orderQueue.peek().getStatus() == Order.Status.TO_COOK) {
+            while (!isPaused) {
+                ArrayList<Order> process = new ArrayList<>();//for safety and no coChanging values
+                //working with Kitchen
+                if (!kitchen.isBusy() && orderQueue.peek() != null && orderQueue.peek().getStatus() == Order.Status.TO_COOK) {
                     kitchen.process(orderQueue.peek());
                 } else {
                     for (Order order : orderQueue) {
-                        if (order.getStatus() == Order.Status.TO_COOK) {
-                            if (!kitchen.isBusy()) {
-                                kitchen.process(order);
-                            }
+                        if (order.getStatus() == Order.Status.TO_COOK && !kitchen.isBusy()) {
+                            kitchen.process(order);
                             break;
                         }
                     }
                 }
-            for (Order order : orderQueue) {
-                if (order.getStatus() == Order.Status.TO_HANDLE
-                        && hasNotBusyHandlers(order.getClass().getSimpleName().equals("DeliveryOrder") ? "Delivery" : "Waiter"))
-                    process.add(order);
-                else if (order.getStatus() == Order.Status.DONE)
-                    process.add(order);
-                if (!order.isLate() && (System.currentTimeMillis() - order.getTimestamp() >= lateTime)) {
-                    process.add(order);
-                    //ToDo order deque
+                //checking queue for statuses
+                for (Order order : orderQueue) {
+                    if (order.getStatus() == Order.Status.TO_HANDLE
+                            && hasNotBusyHandlers(order.getClass().getSimpleName().equals("DeliveryOrder") ? "Deliveryman" : "Waiter")) {
+                        process.add(order);
+                    } else if (order.getStatus() == Order.Status.DONE) {
+                        process.add(order);
+                    }
+                    if (order.getStatus() == Order.Status.TO_COOK && !order.isLate() && (System.currentTimeMillis() - order.getTimestamp() >= lateTime)) {
+                        process.add(order);
+                    }
                 }
-            }
-
-            for (Order order : process) {
-                if (order.getStatus() == Order.Status.TO_COOK) {
-                    order.setLateTrue();
-                    orderQueue.remove(order);
-                    orderQueue.addFirst(order);
-                } else if (order.getStatus() == Order.Status.TO_HANDLE) {
-                    if (order.getClass().getSimpleName().equals("DeliveryOrder"))
-                        handlerProcessOrder(order, "Delivery");
-                    else if (order.getClass().getSimpleName().equals("StationaryOrder"))
-                        handlerProcessOrder(order, "Waiter");
-                } else if (order.getStatus() == Order.Status.DONE) {
-                    turnOver += order.getPrice();
-                    order.setStatus(Order.Status.COUNTED);
-                    System.out.println("Order " + order.getId() + " was handed over.");
-                    orderQueue.remove(order);
+                //working with those orders that either had a proper status or are late
+                for (Order order : process) {
+                    if (order.getStatus() == Order.Status.TO_COOK) { //TO_COOK comes here only if the order is late
+                        int rnd = (int) (Math.random() * 2);
+                        orderQueue.remove(order);
+                        if (rnd == 1) {
+                            order.setLateTrue();
+                            orderQueue.addFirst(order);
+                            if (messagesOnStatusChanges)
+                                System.out.println("Order[" + order.getId() + "] goes next due to being late.");
+                        } else {
+                            if (messagesOnStatusChanges)
+                                System.out.println("Order[" + order.getId() + "] was canceled due to being late.");
+                        }
+                    } else if (order.getStatus() == Order.Status.TO_HANDLE) {
+                        if (order.getClass().getSimpleName().equals("DeliveryOrder"))
+                            handlerProcessOrder(order, "Deliveryman");
+                        else if (order.getClass().getSimpleName().equals("StationaryOrder"))
+                            handlerProcessOrder(order, "Waiter");
+                    } else if (order.getStatus() == Order.Status.DONE) {
+                        if (!order.isLate()) {
+                            order.getHandler().addTips(order.getPrice() * 0.1);
+                        } else {
+                            int minutesLate = (int) (System.currentTimeMillis() - order.getTimestamp() / 60_000);
+                            order.getHandler().addTips(order.getPrice() * (0.1 - (0.01 * minutesLate)));
+                        }
+                        turnOver += order.getPrice();
+                        order.setStatus(Order.Status.COUNTED);
+                        orderQueue.remove(order);
+                        madeOrders.add(order);
+                    }
                 }
-            }
-//                    case DONE -> {
-//                        turnOver += order.getPrice();
-//                        order.setStatus(Order.Status.COUNTED);
-//                        System.out.println("Order " + order.getId() + " was handed over.");
-//                        delete.add(order);
-////                        System.out.println("Do you want to leave some tips? (-1/amount)");
-////                        Scanner in = new Scanner(System.in);
-////                        int tips = in.nextInt();
-////                        if (tips > 0)
-////                            getEmployeeById(order.getHandlerId()).addTips(tips);
-////                        else if (order.isLate())
-////                            System.out.println("We are sorry for long arrangement. Your opinion means a lot to us.");
-//                    }
-        }
-    }
-
-    public void handlerProcessOrder(Order order, String handlerType) {
-        for (Handler handler : handlers) {
-            if (!handler.isBusy() && handler.getClass().getSimpleName().equals(handlerType)) {
-                order.setStatus(Order.Status.HANDLING);
-                handler.setOrder(order);
-                handler.process();
-                break;
             }
         }
     }

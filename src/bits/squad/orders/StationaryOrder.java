@@ -1,8 +1,6 @@
 package bits.squad.orders;
 
 
-import bits.squad.Item;
-
 import java.util.ArrayList;
 
 public class StationaryOrder extends Order{
@@ -13,7 +11,9 @@ public class StationaryOrder extends Order{
         this.tableNumber = tableNumber;
     }
 
-    public byte getTableNumber() {
-        return tableNumber;
+    @Override
+    public String toString() {
+        return super.toString() +
+                "\ttableNumber: " + tableNumber;
     }
 }

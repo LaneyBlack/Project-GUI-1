@@ -3,3 +3,5 @@ Large Spaghetti	Bigger pone of spaghetti bolognese with cheese and meetballs.	tr
 Pizza Margarita	Old as this world, but as balanced, as the universe.	true	31
 Pierogi	Very tasty polish dish.	true	14
 Pancakes with nutella	Gorgeous taste. Beautiful shape and lots of nutella.	true	40
+Sushi California	Eight pieces of wonderful sushi with fresh salty fish	false	28
+Onigiri Ebi	Great taste, low price. Everything what you need this days.	false	13

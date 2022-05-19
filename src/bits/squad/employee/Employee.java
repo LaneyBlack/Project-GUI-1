@@ -1,6 +1,6 @@
 package bits.squad.employee;
 
-public abstract class Employee{
+public abstract class Employee {
     int id;
     String name;
     String phoneNumber;
@@ -13,7 +13,7 @@ public abstract class Employee{
         this.name = name;
         this.salary = salary;
         this.phoneNumber = phoneNumber;
-        madeOrders=0;
+        madeOrders = 0;
     }
 
     public String getName() {
@@ -24,15 +24,13 @@ public abstract class Employee{
         return id;
     }
 
-    public int getSalary() {
-        return salary;
-    }
-
-    public int getMadeOrders() {
-        return madeOrders;
-    }
-
-    public void countOrder(){
+    public void countOrder() {
         madeOrders++;
+    }
+
+    @Override
+    public String toString() {
+        return id +"." + name + "\tphone:" + phoneNumber + '\n'
+                + salary + "zl/month\torders made:" + madeOrders;
     }
 }

@@ -1,5 +1,6 @@
 package bits.squad.employee;
 
+import bits.squad.orders.Item;
 import bits.squad.orders.Order;
 
 import java.util.ArrayList;
@@ -12,19 +13,15 @@ public class Kitchen extends Thread {
     private ArrayList<Cook> cooks;
     private Order order;
 
-    public Kitchen(ArrayList<Cook> cooks) {
-        this.cooks = cooks;
-        this.processTime = 60 * 15 * 1000;
-    }
 
     public Kitchen() {
         this.cooks = new ArrayList<>();
-        this.processTime = 1000; //ToDo set the right time 60*15*1000
+        this.processTime = 30 * 1000; //30*1000
     }
 
     public void addCook(Cook cook) {
         cooks.add(cook);
-        processTime = (60 * 15 * 1000) / cooks.size();
+        processTime = (30 * 1000) / cooks.size();
     }
 
     public void process(Order order) {
@@ -34,21 +31,21 @@ public class Kitchen extends Thread {
     @Override
     public void run() {
         while (!isInterrupted()) {
-            if (order!=null && !isBusy && order.getStatus() == Order.Status.TO_COOK) {
+            if (order != null && !isBusy && order.getStatus() == Order.Status.TO_COOK) {
                 isBusy = true;
                 order.setStatus(Order.Status.COOKING);
                 if (messagesOnStatusChanges)
-                    System.out.println("Started cooking " + order.getId());
-//                for (Item<Integer> item : order.getItems())
-//                    try {
-//                        Thread.sleep(processTime);
-//                    } catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
+                    System.out.println("Kitchen started cooking order[" + order.getId() + "]");
+                for (Item<Integer> item : order.getItems())
+                    try {
+                        Thread.sleep(processTime);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 for (Cook cook : cooks)
                     cook.countOrder();
                 if (messagesOnStatusChanges)
-                    System.out.println("Cooked " + order.getId());
+                    System.out.println("Order[" + order.getId() + "] was cooked");
                 order.setStatus(Order.Status.TO_HANDLE);
                 isBusy = false;
             }
