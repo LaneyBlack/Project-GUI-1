@@ -1,7 +1,6 @@
 package bits.squad;
 
-public class Item<T extends Number>
-{
+public class Item<T extends Number> {
     private boolean isAvailable;
     private String name;
     private String description;
@@ -40,6 +39,10 @@ public class Item<T extends Number>
 
     public T getPrice() {
         return price;
+    }
+
+    public int getIntPrice(){
+        return price.intValue();
     }
 
     public void setPrice(T price) {

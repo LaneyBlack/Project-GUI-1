@@ -1,30 +1,47 @@
 package bits.squad.orders;
 
 import bits.squad.Item;
-import bits.squad.Restaurant;
+import bits.squad.employee.Handler;
 
 import java.util.ArrayList;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public abstract class Order {
-    ArrayList<Item> items;
+    int id;
     boolean isLate;
     long timestamp;
-    int tips;
+    int price;
     Status status;
-    enum Status {
-        ORDERED,
-        IN_PROGRESS,
-        DONE;
+
+    static int idCount = 0;
+
+    ReentrantReadWriteLock readWriteLock;
+    Handler handler;
+    ArrayList<Item<Integer>> items;
+
+    public enum Status {
+        TO_COOK,
+        COOKING,
+        TO_HANDLE,
+        HANDLING,
+        DONE,
+        COUNTED
     }
 
-    public Order(ArrayList<Item> items) {
+    public Order(ArrayList<Item<Integer>> items) {
         this.items = items;
         isLate = false;
         timestamp = System.currentTimeMillis();
-        status = Status.ORDERED;
+        status = Status.TO_COOK;
+        items.forEach((item) -> {
+            price += item.getIntPrice();
+        });
+        id = idCount++;
+        readWriteLock = new ReentrantReadWriteLock();
     }
 
-    public ArrayList<Item> getItems() {
+    public ArrayList<Item<Integer>> getItems() {
         return items;
     }
 
@@ -32,8 +49,9 @@ public abstract class Order {
         return isLate;
     }
 
-    public void setLate(boolean late) {
-        isLate = late;
+    public void setLateTrue() {
+        isLate = true;
+        price *= 0.8;
     }
 
     public long getTimestamp() {
@@ -44,11 +62,40 @@ public abstract class Order {
         this.timestamp = timestamp;
     }
 
-    public int getTips() {
-        return tips;
+    public Handler getHandler() {
+        return handler;
     }
 
-    public void setTips(int tips) {
-        this.tips = tips;
+    public void setHandler(Handler handler) {
+        this.handler = handler;
     }
+
+    public Status getStatus() {
+        Lock readLock = readWriteLock.readLock();
+        readLock.lock();
+        try {
+            return status;
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    public void setStatus(Status status) {
+        Lock readLock = readWriteLock.writeLock();
+        readLock.lock();
+        try {
+            this.status = status;
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    public int getPrice() {
+        return price;
+    }
+
+    public int getId() {
+        return id;
+    }
+
 }

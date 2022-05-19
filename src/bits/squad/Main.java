@@ -1,12 +1,13 @@
 package bits.squad;
 
+import bits.squad.employee.Cook;
+import bits.squad.employee.Delivery;
+import bits.squad.employee.Waiter;
 import bits.squad.orders.DeliveryOrder;
 import bits.squad.orders.StationaryOrder;
-import bits.squad.workers.Cook;
-import bits.squad.workers.Delivery;
-import bits.squad.workers.Waiter;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.util.ArrayList;
 import java.util.InputMismatchException;
@@ -19,18 +20,23 @@ public class Main {
     public static void main(String[] args) {
         //Constructors
         Restaurant restaurant = new Restaurant("High Voltage", "ul. Chełmska 8", 20);
-        restaurant.addToMenu(new Item("Spaghetti", "Pone of spaghetti bolognese with cheese.", true, 18));
-        restaurant.addToMenu(new Item("Large Spaghetti", "Bigger pone of spaghetti bolognese with cheese and meetballs.", true, 24));
-        restaurant.addToMenu(new Item("Pizza Margarita", "Old as this world, but as balanced, as the universe.", true, 31));
-        restaurant.addWorker(new Cook(restaurant.getNewWorkerId(), "John Sandman", 16000));
-        restaurant.addWorker(new Cook(restaurant.getNewWorkerId(), "Shown White", 14000));
-        restaurant.addWorker(new Delivery(restaurant.getNewWorkerId(), "Lewis Hamilton", 9000));
-        restaurant.addWorker(new Waiter(restaurant.getNewWorkerId(), "Pam Beezly", 8000));
-        restaurant.addWorker(new Delivery(restaurant.getNewWorkerId(), "Sonic The Man", 9500));
-        restaurant.addWorker(new Waiter(restaurant.getNewWorkerId(), "Jim Halpert", 8500));
+        try {
+            restaurant.readMenuFromText("C:\\PJATK\\GUI\\Project(GUI 1)\\src\\bits\\squad\\menu\\menu.txt");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        restaurant.addEmployee(new Cook(restaurant.getNewEmployeeId(), "John Sandman", "478-00-24", 16000));
+        restaurant.addEmployee(new Cook(restaurant.getNewEmployeeId(), "Shown White", "571-78-21", 14000));
+        restaurant.addEmployee(new Delivery(restaurant.getNewEmployeeId(), "Lewis Hamilton", "124-23-46", 9000));
+        restaurant.addEmployee(new Waiter(restaurant.getNewEmployeeId(), "Pam Beezly", "523-23-55", 8000));
+        restaurant.addEmployee(new Delivery(restaurant.getNewEmployeeId(), "Sonic The Man", "521-123-56", 9500));
+        restaurant.addEmployee(new Waiter(restaurant.getNewEmployeeId(), "Jim Halpert", "521-123-57", 8500));
+        for (int i = 0; i < 10; i++) {
+            restaurant.makeRandomOrder();
+        }
         Scanner in = new Scanner(System.in);
         //System booting
-        System.out.println(Colors.getTextColor("blue") + "--------Welcome to " + restaurant.getName() + "--------" + "\n" +
+        System.out.println(Colors.getTextColor("blue") + "--------Welcome to " + restaurant.getRestName() + "--------" + "\n" +
                 Colors.getTextColor("YELLOW") + "WARNING!!!\n" + Colors.getTextColor("RESET") +
                 "Using this app requires using a commandline commands. \n" +
                 "All the commands should start with `-` symbol.\n" +
@@ -47,7 +53,6 @@ public class Main {
                     case "-h", "-help" -> System.out.println("""
                                 Commands list:
                             -help(-h) = help
-                            -exit(-e) = closing the restaurant
                                     -Menu:
                             -printmenu(-pm) = printing menu
                             -printavailablemenu(-pam) = printing available menu
@@ -57,19 +62,21 @@ public class Main {
                             -markinstock(-mis) = mark item as in stock
                             -readtextmenu (-rtm) = read menu from text file
                             -writetextmenu (-wtm) = write menu into text file
-                                    -Workers:
-                            -printworkers(-pw) = print all workers
-                            -addworker(-aw) = adds worker
-                            -deleteworker(-dw) = deletes worker
+                                    -Employees:
+                            -printemps(-pe) = print all employees
+                            -addemp(-ae) = adds employee
+                            -deleteemp(-de) = deletes employee
                                     -Orders:
-                            -makeorder(-mo)
+                            -makeorder(-mo) = make a order
                             -makerandomorder(-mro)-
                             -printwaitingorders(-pwo)-
                             -printrealisedorders(-pro)-
                                     -Restaurant:
                             -start(-s)-
-                            -pause(-p)-
+                            -exit(-e) = closing the restaurant
                             """);
+                    //-------------------------------------------------------Restaurant-------------------------------------------------------
+                    case "-s","-start" -> restaurant.startRestaurant();
                     //-------------------------------------------------------Menu-------------------------------------------------------
                     case "-pm", "-printmenu" -> restaurant.printMenu();
                     case "-pam", "-printavailablemenu" -> restaurant.printAvailableMenu();
@@ -115,29 +122,31 @@ public class Main {
                         restaurant.writeMenuToText();
                         System.out.println("File written successfully");
                     }
-                    //-------------------------------------------------------Workers-------------------------------------------------------
-                    case "-pw", "-printworkers" -> restaurant.printAllWorkers();
-                    case "-aw", "-addworker" -> {
-                        System.out.println("Please fill data of the worker:");
-                        System.out.println("Name");
+                    //-------------------------------------------------------Employees-------------------------------------------------------
+                    case "-pe", "-printemps" -> restaurant.printAllEmployees();
+                    case "-ae", "-addemp" -> {
+                        System.out.println("Please fill data of the employee:");
+                        System.out.println("Name:");
                         String name = in.nextLine().trim();
-                        System.out.println("Salary");
+                        System.out.println("Salary:");
                         int salary = in.nextInt();
-                        System.out.println("Choose worker type (1-Cook, 2-Delivery, 3-Waiter)");
-                        restaurant.addWorker(switch (in.nextInt()) {
-                            case 1 -> new Cook(restaurant.getNewWorkerId(), name, salary);
-                            case 2 -> new Delivery(restaurant.getNewWorkerId(), name, salary);
-                            case 3 -> new Waiter(restaurant.getNewWorkerId(), name, salary);
+                        System.out.println("Phone Number:");
+                        String phoneNumber = in.nextLine();
+                        System.out.println("Choose employee type (1-Cook, 2-Delivery, 3-Waiter)");
+                        restaurant.addEmployee(switch (in.nextInt()) {
+                            case 1 -> new Cook(restaurant.getNewEmployeeId(),phoneNumber, name, salary);
+                            case 2 -> new Delivery(restaurant.getNewEmployeeId(),phoneNumber, name, salary);
+                            case 3 -> new Waiter(restaurant.getNewEmployeeId(),phoneNumber, name, salary);
                             default -> throw new IllegalStateException("Unexpected value: " + in.nextInt());
                         });
-                        System.out.println("Worker added successfully");
+                        System.out.println("Employee added successfully");
                         in.nextLine(); //Scanner goes to new line
                     }
-                    case "-dw", "-deleteworker" -> {
-                        restaurant.printWorkerNames();
-                        System.out.println("Please enter id of the worker you want to delete:");
-                        restaurant.deleteWorker(in.nextInt());
-                        System.out.println("Worker deleted successfully");
+                    case "-de", "-deleteemp" -> {
+                        restaurant.printEmployeeNames();
+                        System.out.println("Please enter id of the employee you want to delete:");
+                        restaurant.deleteEmployee(in.nextInt());
+                        System.out.println("Employee deleted successfully");
                         in.nextLine(); //Scanner goes to new line
                     }
                     //-------------------------------------------------------Orders-------------------------------------------------------
@@ -163,6 +172,7 @@ public class Main {
                         } else
                             throw new InvalidKeyException("Invalid order type!");
                     }
+                    case "-printwaitingorders", "-pwo" -> restaurant.printWaitingOrders();
                     default -> errorPrint("Command not recognised");
                 }
             } catch (IllegalStateException | InputMismatchException e) {
