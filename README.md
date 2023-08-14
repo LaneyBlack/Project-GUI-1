@@ -1,5 +1,6 @@
 # Project-GUI-1
 Working restaurant with multithreading - Semester Project on GUI and OOP in Java (PJATK)
+
 2nd Semester Project
 
 First of all orders go to the kitchen where all cooks start making dishes one by one. Than those dish go to either Delivery or Waiters. Waiters are prioritsed. Every Handler delivers a dish in it's own thread.
